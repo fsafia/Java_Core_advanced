@@ -10,6 +10,7 @@ public class ClientHandler {
     MainServ serv;
     DataInputStream in;
     DataOutputStream out;
+    String nick;
 
     public ClientHandler(MainServ serv, Socket socket){
         try {
@@ -23,13 +24,30 @@ public class ClientHandler {
                 @Override
                 public void run() {
                     try {
-                        while (true){
+                        while (true){   //этот цикл будет отвечать за авторизацию
+                            String msg = in.readUTF();
+                            if (msg.startsWith("/auth")){  //ожидаем сообщение в виде auth_login1_pass1
+                                String [] tokens = msg.split(" ");
+                                String newNick = AuthService.getNickByLoginAndPass(tokens[1], tokens[2]); //передаем логин, пароль
+                                if (newNick != null){
+                                    sendMsg("/authok");
+                                    nick = newNick;
+                                    serv.subscribe(ClientHandler.this);
+                                    break;
+                                }
+                                 else {
+                                     sendMsg("Неверный логин/пароль");
+                                }
+                            }
+                        }
+
+                        while (true){  //отвечает за работу  с пользователем
                             String msg = in.readUTF();
                             if (msg.equals("/end")){
                                 out.writeUTF("/serverClosed");
                                 break;
                             }
-                            serv.broadcastMsg(msg);
+                            serv.broadcastMsg(nick + ": " + msg);
                         }
 
 
@@ -51,6 +69,7 @@ public class ClientHandler {
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
+                        serv.unsubscribe(ClientHandler.this);
                     }
                 }
             }).start();

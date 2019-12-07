@@ -1,12 +1,8 @@
 package lesson6.server;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Scanner;
 import java.util.Vector;
 
 public  class MainServ {
@@ -19,16 +15,22 @@ public  class MainServ {
         ServerSocket server = null;
         Socket socket = null;
             try {
+                AuthService.connect(); //подключаемся к базе данных
+                //код ДЛЯ тестового подключения
+
+//                try {
+//                    String res = AuthService.getNickByLoginAndPass("login1", "pass1" );
+//                    System.out.println(res + "соединение с БД");
+//                } catch (SQLException e) {
+//                    e.printStackTrace();
+//                }
                 server = new ServerSocket(8189);
                 System.out.println("Сервер запущен!");
-
-//                socket = server.accept();
-//                System.out.println("клиент подключился!");
 
                 while (true){
                     socket = server.accept();
                     System.out.println("клиент подключился!");
-                    clients.add(new ClientHandler(this, socket));
+                    new ClientHandler(this, socket);
                 }
 
 //                DataInputStream in = new DataInputStream(socket.getInputStream()); //входящий поток
@@ -57,6 +59,7 @@ public  class MainServ {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                AuthService.disconnect();
             }
         }
     //для отправки сообщений всем клиентам
@@ -66,5 +69,12 @@ public  class MainServ {
             o.sendMsg(msg);
         }
     }
+    public void subscribe(ClientHandler client){
+        clients.add(client);
     }
+
+    public void unsubscribe(ClientHandler client){
+        clients.remove(client);
+    }
+}
 
