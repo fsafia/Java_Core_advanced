@@ -1,7 +1,9 @@
 package lesson6.client;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -36,23 +38,30 @@ public class Controller {
     @FXML
     HBox upperPanel;
     @FXML
-    TextField loginField;
+    TextField loginField, signupLoginField, signupNickField;
     @FXML
-    PasswordField passwordField;
+    PasswordField passwordField, signupPasswordField;
+    @FXML
+    ListView<String> clientsList;
 
     public void setAuthorized(boolean isAuthorized){
         this.isAuthorized = isAuthorized;
         if(!isAuthorized){
+            textArea.clear();
             upperPanel.setVisible(true);
             upperPanel.setManaged(true);
             bottomPanel.setVisible(false);
             bottomPanel.setManaged(false);
+            clientsList.setVisible(false);
+            clientsList.setManaged(false);
         } else {
             textArea.clear();
             upperPanel.setVisible(false);
             upperPanel.setManaged(false);
             bottomPanel.setVisible(true);
             bottomPanel.setManaged(true);
+            clientsList.setVisible(true);
+            clientsList.setManaged(true);
         }
     }
 
@@ -63,9 +72,7 @@ public class Controller {
             in = new DataInputStream(socket.getInputStream()); //инициализируем потоки
             out = new DataOutputStream(socket.getOutputStream());
 
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
+            new Thread(() -> {
                     try {
                         while (true){
                             String str = in.readUTF();
@@ -73,16 +80,29 @@ public class Controller {
                                 setAuthorized(true);
                                 break;
                             } else {
-                                textArea.appendText(str + "\n");
+//                                for (TextArea o : textAreas){
+//                                    o.appendText(str + "\n");
+//                                }
+                               textArea.appendText(str + "\n");
                             }
                         }
 
 
                         while (true){
                             String str = in.readUTF();
-                            if (str.equals("/serverClosed")){
-                                break;
+                            if (str.startsWith("/")){
+                                if (str.equals("/serverClosed")) break;
+                                if (str.startsWith("/clientslist ")){
+                                    String[] tokens = str.split(" ");
+                                    Platform.runLater(() -> {
+                                        clientsList.getItems().clear();
+                                        for (int i = 1; i < tokens.length; i++) {
+                                            clientsList.getItems().add(tokens[i]);
+                                        }
+                                    });
+                                }
                             }
+
                             textArea.appendText(str + "\n");
                         }
                     }catch (IOException e) {
@@ -96,7 +116,7 @@ public class Controller {
                         setAuthorized(false);
                     }
                 }
-            }).start();
+            ).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -126,12 +146,26 @@ public class Controller {
     public void tryToAuth(ActionEvent actionEvent){
         if (socket == null || socket.isClosed()){
             connect();
-
         }
         try {
             out.writeUTF("/auth " + loginField.getText() + " " + passwordField.getText());
             loginField.clear();
             passwordField.clear();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void tryToSignup(ActionEvent actionEvent){
+        if (socket == null || socket.isClosed()){
+            connect();
+        }
+        try {
+            out.writeUTF("/signup " + signupLoginField.getText() + " " + signupPasswordField.getText() + " " + signupNickField.getText());
+            signupLoginField.clear();
+            signupPasswordField.clear();
+            signupNickField.clear();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -33,19 +33,6 @@ public  class MainServ {
                     new ClientHandler(this, socket);
                 }
 
-//                DataInputStream in = new DataInputStream(socket.getInputStream()); //входящий поток
-//
-//                DataOutputStream out = new DataOutputStream(socket.getOutputStream());//исходящий поток
-
-//                while (true){
-//                    String str = in.readUTF();
-//                    if (str.equals("/end")){  //для корректного закрытия сервера
-//                        break;
-//                    }
-//                    System.out.println("Client: " + str);
-//
-//                    out.writeUTF( str);
-//                }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -63,18 +50,55 @@ public  class MainServ {
             }
         }
     //для отправки сообщений всем клиентам
-    public void broadcastMsg(String msg){
+    public void broadcastMsg(ClientHandler from, String msg){
         for (ClientHandler o : clients) {
-            //метоод для отправки сообщения одному клиенту
-            o.sendMsg(msg);
+            if (!o.checkBlackList(from.getNick())){
+                o.sendMsg(msg);//метоод для отправки сообщения одному клиенту
+            }
         }
     }
+//отображение онлайн клиентов
+    public void broadcastClientsList() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("/clientslist ");
+        for (ClientHandler o : clients) {
+            sb.append(o.getNick() + " ");
+        }
+        String out = sb.toString();
+        for (ClientHandler o : clients) {
+            o.sendMsg(out);
+        }
+    }
+
+    public void sendPersonalMsg(ClientHandler from, String nickTo, String msg){
+        for (ClientHandler o : clients){
+            if (o.getNick().equals(nickTo)){
+                o.sendMsg("to " + nickTo + ": " + msg);
+                return;
+            }
+        }
+        from.sendMsg("Клиент с ником " + nickTo + " не найден в чате");
+    }
+
     public void subscribe(ClientHandler client){
         clients.add(client);
+        broadcastClientsList();
     }
 
     public void unsubscribe(ClientHandler client){
         clients.remove(client);
+        broadcastClientsList();
     }
+
+    public boolean isNickBusy(String newNick){
+        for (ClientHandler o : clients) {
+            if (o.getNick().equals(newNick)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }
 
