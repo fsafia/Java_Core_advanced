@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class ClientHandler {
@@ -41,6 +40,7 @@ public class ClientHandler {
                                     if(!serv.isNickBusy(newNick)){
                                         sendMsg("/authok");
                                         nick = newNick;
+
                                         serv.subscribe(ClientHandler.this);
                                         break;
                                     } else {
@@ -53,7 +53,7 @@ public class ClientHandler {
                                 }
                             }
 
-                            //авторизация
+                            //регистрация
                             if (msg.startsWith("/signup")){ //ожидаем сообщения в виде /signup login4 pass4 nick4
                                 String [] tokens = msg.split(" ");
                                 if (AuthService.isLoginUnique(tokens[1])){
@@ -77,6 +77,7 @@ public class ClientHandler {
                                     break;
                                 }
 
+                                //отправка персональных сообщений
                                 if (str.startsWith("/w ")) {  //сообщение должно начинаться с /w nick1 textMsg
                                     String[] tokens = str.split(" ", 3);//делим все сообщение на 3 части: до пробела, после 1го пробела до 2го, после 2го
                                     String m = str.substring(tokens[1].length() + 4); //это текст для конкретного nick
@@ -85,7 +86,13 @@ public class ClientHandler {
                                 if (str.startsWith("/blacklist ")) { //blacklist nick3
                                     String[] tokens = str.split(" ");
                                     blackList.add(tokens[1]);
-                                    sendMsg("Вы добавили пользователя " + tokens[1] + " в черный список");
+                                    //
+                                    int idThisNick = AuthService.getIdByNick(nick);
+                                    int idNickToBlock = AuthService.getIdByNick(tokens[1]);
+                                    String msg = AuthService.addUserIntoDBtableBlackList(idThisNick, idNickToBlock);
+                                    //
+                                    sendMsg(tokens[1] + msg);
+                                    serv.broadcastClientsList(this);
                                 }
                             } else {
                                 serv.broadcastMsg(this, nick + ": " + str);

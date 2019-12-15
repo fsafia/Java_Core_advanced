@@ -25,14 +25,6 @@ public class Controller {
     @FXML
     TextField textField;
 
-    Socket socket;
-    DataInputStream in;
-    DataOutputStream out;
-
-    final String IP_ADRES  = "localhost";
-    final int PORT = 8189;
-    private boolean isAuthorized;
-
     @FXML
     HBox bottomPanel;
     @FXML
@@ -42,7 +34,14 @@ public class Controller {
     @FXML
     PasswordField passwordField, signupPasswordField;
     @FXML
-    ListView<String> clientsList;
+    ListView<String> clientsList, clientsBlockList;
+    Socket socket;
+    DataInputStream in;
+    DataOutputStream out;
+
+    final String IP_ADRES  = "localhost";
+    final int PORT = 8189;
+    private boolean isAuthorized;
 
     public void setAuthorized(boolean isAuthorized){
         this.isAuthorized = isAuthorized;
@@ -54,6 +53,8 @@ public class Controller {
             bottomPanel.setManaged(false);
             clientsList.setVisible(false);
             clientsList.setManaged(false);
+            clientsBlockList.setVisible(false);
+            clientsBlockList.setManaged(false);
         } else {
             textArea.clear();
             upperPanel.setVisible(false);
@@ -62,6 +63,8 @@ public class Controller {
             bottomPanel.setManaged(true);
             clientsList.setVisible(true);
             clientsList.setManaged(true);
+            clientsBlockList.setVisible(true);
+            clientsBlockList.setManaged(true);
         }
     }
 
@@ -101,9 +104,20 @@ public class Controller {
                                         }
                                     });
                                 }
+                                if (str.startsWith("/blacklist ")){
+                                    String[] tokens = str.split(" ");
+                                    Platform.runLater(() -> {
+                                        clientsBlockList.getItems().clear();
+                                        for (int i = 1; i < tokens.length; i++) {
+                                            clientsBlockList.getItems().add(tokens[i]);
+                                        }
+                                    });
+                                }
+                            }else{
+                                textArea.appendText(str + "\n");
                             }
 
-                            textArea.appendText(str + "\n");
+
                         }
                     }catch (IOException e) {
                         e.printStackTrace();

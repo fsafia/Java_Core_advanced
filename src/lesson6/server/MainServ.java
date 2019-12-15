@@ -1,14 +1,16 @@
 package lesson6.server;
 
+import lesson6.zadanieOsnovnoe.Client;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Set;
 import java.util.Vector;
 
 public  class MainServ {
 
-    private Vector<ClientHandler> clients; //cсинхронизированный арай лист для всех потоков клиентов
-//    public static void main(String[] args) {
+    private Vector<ClientHandler> clients; //синхронизированный арай лист для всех потоков клиентов
 
     public MainServ(){
         clients = new Vector<>();
@@ -49,32 +51,72 @@ public  class MainServ {
                 AuthService.disconnect();
             }
         }
-    //для отправки сообщений всем клиентам
+    //для отправки сообщений всем клиентам, кроме клиентов из черного списка
     public void broadcastMsg(ClientHandler from, String msg){
+
         for (ClientHandler o : clients) {
-            if (!o.checkBlackList(from.getNick())){
-                o.sendMsg(msg);//метоод для отправки сообщения одному клиенту
+            //
+            //выводим список  Set<Integer> id заблокированных клиентов для текущего клиента "о"
+            Set<Integer> blockUserList = AuthService.getListIdBlockUsersByNick(o.getNick());
+            if (!isClientBlock(from, blockUserList)){
+                o.sendMsg(msg);
             }
         }
     }
-//отображение онлайн клиентов
-    public void broadcastClientsList() {
+//отображение онлайн клиентов в колонке clientslist или blacklist
+    public void broadcastClientsList(ClientHandler client) {
+        //для формирования онлайн списка незаблокированных клиентов
         StringBuilder sb = new StringBuilder();
-        sb.append("/clientslist ");
+        sb.append("/clientslist clientslist: ");
+        //для формирования онлайн списка заблокированных клиентов
+        StringBuilder blackListClients = new StringBuilder();
+        blackListClients.append("/blacklist blacklist: ");
+
         for (ClientHandler o : clients) {
-            sb.append(o.getNick() + " ");
+            String nickThisClient = o.getNick();//ник текущего клиента
+            //выводим список  Set<Integer> id заблокированных клиентов для текущего клиента "о"
+            Set<Integer> blockUserList = AuthService.getListIdBlockUsersByNick(nickThisClient);
+
+            for (ClientHandler onLineClient : clients) {
+                if (isClientBlock(onLineClient, blockUserList)){
+                    blackListClients.append(onLineClient.getNick() + " ");
+                } else {
+                    sb.append(onLineClient.getNick() + " ");
+                }
+            }
+            String outOnlineClient = sb.toString();
+            String outBlockClient = blackListClients.toString();
+
+            o.sendMsg(outOnlineClient);
+            o.sendMsg(outBlockClient);
+
+            sb.delete(26, sb.length()); //обновляем строку до состояния "/clientslist clientslist: "
+            blackListClients.delete(22, blackListClients.length()); //обновляем строку до состояния "/blacklist blacklist: "
         }
-        String out = sb.toString();
-        for (ClientHandler o : clients) {
-            o.sendMsg(out);
+    }
+    //проверка: онлайнклиент в черном списке?
+    public boolean isClientBlock(ClientHandler onLineClient, Set<Integer> blockUserList){
+
+        Integer idOnLineClient = AuthService.getIdByNick(onLineClient.getNick());
+        for (Integer idBlockUser : blockUserList) {
+            if (idBlockUser == idOnLineClient){
+                return true;
+            }
         }
+        return false;
     }
 
     public void sendPersonalMsg(ClientHandler from, String nickTo, String msg){
         for (ClientHandler o : clients){
             if (o.getNick().equals(nickTo)){
-                o.sendMsg("to " + nickTo + ": " + msg);
-                return;
+                //выводим список  Set<Integer> id заблокированных клиентов для текущего клиента "nickTo"
+                Set<Integer> blockUserList = AuthService.getListIdBlockUsersByNick(nickTo);
+                if (!isClientBlock(from, blockUserList)){
+                    o.sendMsg( from.getNick() + " to " + nickTo + ": " + msg);
+                    return;
+                } else {
+                    return;
+                }
             }
         }
         from.sendMsg("Клиент с ником " + nickTo + " не найден в чате");
@@ -82,12 +124,12 @@ public  class MainServ {
 
     public void subscribe(ClientHandler client){
         clients.add(client);
-        broadcastClientsList();
+        broadcastClientsList(client);
     }
 
     public void unsubscribe(ClientHandler client){
         clients.remove(client);
-        broadcastClientsList();
+        broadcastClientsList(client);
     }
 
     public boolean isNickBusy(String newNick){

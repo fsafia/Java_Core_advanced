@@ -19,7 +19,7 @@ public class Main extends Application {
         primaryStage.setTitle("Chat");
         c = loader.getController();
 
-        Scene scene = new Scene(root, 310, 350);
+        Scene scene = new Scene(root, 510, 350);
         primaryStage.setScene(scene);
         primaryStage.show();
         primaryStage.setOnCloseRequest(event -> {

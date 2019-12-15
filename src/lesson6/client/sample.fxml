@@ -23,6 +23,9 @@
             <PasswordField fx:id="passwordField" onAction="#tryToAuth" promptText="Пароль" />
             <Button onAction="#tryToAuth" text="Авторизоваться" prefWidth="200" />
         </VBox>
+
+        <VBox HBox.hgrow="ALWAYS" prefWidth="200"></VBox>
+
         <VBox HBox.hgrow="ALWAYS">
             <TextField fx:id="signupLoginField" promptText="Логин"/>
             <PasswordField fx:id="signupPasswordField" promptText="Пароль" />
@@ -39,9 +42,12 @@
             <HBox fx:id="bottomPanel" managed="false" visible="false">
                 <TextField fx:id="textField" HBox.hgrow="ALWAYS" promptText="Введите сообщение..." onAction="#sendMsg"/>
                 <Button fx:id="btn1" text="send" onAction="#sendMsg"/>
+
             </HBox>
          </VBox>
-        <ListView fx:id="clientsList"  prefWidth="200" />
+        <ListView fx:id="clientsList" managed="false" prefWidth="300" />
+        <ListView fx:id="clientsBlockList" managed="false"  prefWidth="300" />
+
     </HBox>
 
 
