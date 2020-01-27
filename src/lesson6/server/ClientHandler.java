@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 public class ClientHandler {
     private Socket socket;
@@ -42,14 +43,17 @@ public class ClientHandler {
                                         nick = newNick;
 
                                         serv.subscribe(ClientHandler.this);
+                                        MainServ.logger.log(Level.INFO, "клиент " + nick + " подключился");
                                         break;
                                     } else {
                                         sendMsg("Учетная запись уже используется");
+                                        MainServ.logger.log(Level.INFO, newNick + " Учетная запись уже используется");//
                                     }
 
                                 }
                                 else {
                                     sendMsg("Неверный логин/пароль");
+                                    MainServ.logger.log(Level.INFO, "Неверный логин " + tokens[1] + " /пароль " + tokens[2]);//
                                 }
                             }
 
@@ -82,6 +86,7 @@ public class ClientHandler {
                                     String[] tokens = str.split(" ", 3);//делим все сообщение на 3 части: до пробела, после 1го пробела до 2го, после 2го
                                     String m = str.substring(tokens[1].length() + 4); //это текст для конкретного nick
                                     serv.sendPersonalMsg(this, tokens[1], tokens[2]);
+                                    MainServ.logger.log(Level.INFO, nick + " отправил персональное сообщение для " + tokens[1]);//
                                 }
                                 if (str.startsWith("/blacklist ")) { //blacklist nick3
                                     String[] tokens = str.split(" ");
@@ -96,6 +101,7 @@ public class ClientHandler {
                                 }
                             } else {
                                 serv.broadcastMsg(this, nick + ": " + str);
+                                MainServ.logger.log(Level.INFO, nick + " отправил сообщение  для всех клиентов.");//
                             }
                             System.out.println("Client" + str);
 

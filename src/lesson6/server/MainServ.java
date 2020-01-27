@@ -7,12 +7,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.*;
 
 public  class MainServ {
 
     private Vector<ClientHandler> clients; //синхронизированный арай лист для всех потоков клиентов
+     static final Logger logger = Logger.getLogger(lesson6.server.MainServ.class.getName());//
+
 
     public MainServ(){
+        logger.setLevel(Level.ALL);//
         clients = new Vector<>();
         ServerSocket server = null;
         Socket socket = null;
@@ -26,12 +30,18 @@ public  class MainServ {
 //                } catch (SQLException e) {
 //                    e.printStackTrace();
 //                }
+                Handler handler = new FileHandler("sereverLog.log", true);//
+                handler.setLevel(Level.ALL);
+                handler.setFormatter(new SimpleFormatter());
+                logger.addHandler(handler);//
                 server = new ServerSocket(8189);
                 System.out.println("Сервер запущен!");
+                logger.log(Level.INFO, "Сервер запущен!");
 
                 while (true){
                     socket = server.accept();
                     System.out.println("клиент подключился!");
+
                     new ClientHandler(this, socket);
                 }
 
